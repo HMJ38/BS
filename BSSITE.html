@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이주대학교 야구부 - Leeju Univ Baseball</title>
+    <style>
+        :root {
+            --main-blue: #003893;
+            --sub-white: #ffffff;
+            --bg-overlay: rgba(0, 0, 0, 0.6);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
+        body { background-color: #000; color: #fff; overflow-x: hidden; }
+
+        /* 배경 이미지 설정 */
+        .site-background {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/BACK.png') no-repeat center center/cover;
+            filter: brightness(0.4);
+            z-index: -1;
+        }
+
+        /* 로고 */
+        .university-logo {
+            position: fixed;
+            top: 20px; left: 20px;
+            width: 80px; height: 80px;
+            background: url('https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/LOG.png') no-repeat center center/contain;
+            z-index: 100;
+        }
+
+        /* 네비게이션 바 */
+        .side-nav {
+            position: fixed;
+            left: 30px; top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 1000;
+        }
+        .nav-bar {
+            width: 4px; height: 30px;
+            background: rgba(255,255,255,0.3);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+        .nav-bar.active {
+            height: 60px;
+            background: var(--main-blue);
+            box-shadow: 0 0 10px var(--main-blue);
+        }
+
+        /* 섹션 공통 */
+        section {
+            width: 100%; min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 80px 20px;
+            position: relative;
+        }
+        h2 { font-size: 2.5rem; margin-bottom: 40px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); border-bottom: 3px solid var(--main-blue); padding-bottom: 10px; }
+
+        /* 1. 안지수 프로필 */
+        .profile-card {
+            width: 300px; height: 300px;
+            background: #fff;
+            border: 5px solid var(--main-blue);
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .profile-card:hover { transform: scale(1.05); }
+        .profile-card img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 모달 스타일 (흰색 테마) */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            z-index: 2000; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: var(--sub-white); padding: 40px; border-radius: 15px;
+            max-width: 500px; width: 90%; text-align: center;
+            border: 2px solid var(--main-blue); color: #333;
+            max-height: 90vh; overflow-y: auto;
+        }
+        
+        /* 캐릭터 이미지 크기 확대 */
+        .modal-char-img {
+            width: 100%; height: auto; border-radius: 10px;
+            object-fit: cover; margin-bottom: 20px;
+            border: 2px solid var(--main-blue);
+        }
+
+        /* 2. 선수 소개 */
+        .field-container {
+            position: relative;
+            width: 100%; max-width: 800px;
+            aspect-ratio: 16/9;
+            background: url('https://github.com/USER_NAME/REPO_NAME/raw/main/baseball_field.png') no-repeat center center/contain;
+            margin: 0 auto;
+        }
+        .player-pin { position: absolute; width: 60px; text-align: center; cursor: pointer; transition: transform 0.2s; }
+        .player-pin:hover { transform: scale(1.1); }
+        .player-img {
+            width: 50px; height: 50px; border-radius: 50%;
+            border: 2px solid #fff; background: #eee;
+            margin-bottom: 5px; overflow: hidden;
+        }
+        .player-img img { width: 100%; height: 100%; object-fit: cover; }
+        .player-name { font-size: 0.8rem; background: rgba(0,0,0,0.7); padding: 2px 5px; border-radius: 5px; color: #fff; }
+
+        .pos-p { top: 50%; left: 45%; } .pos-c { top: 80%; left: 45%; }
+        .pos-1b { top: 50%; left: 70%; } .pos-2b { top: 30%; left: 60%; }
+        .pos-3b { top: 50%; left: 20%; } .pos-ss { top: 30%; left: 30%; }
+        .pos-lf { top: 10%; left: 15%; } .pos-cf { top: 5%; left: 45%; }
+        .pos-rf { top: 10%; left: 75%; } .pos-coach { bottom: 10%; left: 10%; }
+
+        /* 3. 이미지 미리보기 */
+        .gallery-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+            max-width: 600px; width: 100%;
+        }
+        .gallery-item {
+            aspect-ratio: 1/1; background: #222; border: 2px solid var(--sub-white);
+            cursor: pointer; overflow: hidden; transition: 0.3s;
+        }
+        .gallery-item:hover { filter: brightness(1.2); border-color: var(--main-blue); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* BGM 컨트롤러 */
+        .bgm-player {
+            position: fixed; bottom: 20px; right: 20px;
+            background: rgba(0, 56, 147, 0.8); padding: 15px;
+            border-radius: 30px; display: flex; align-items: center; gap: 15px;
+            z-index: 1000; border: 1px solid rgba(255,255,255,0.2);
+        }
+        .bgm-btn {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid #fff; color: #fff;
+            padding: 8px 15px; border-radius: 20px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+            transition: all 0.3s ease; font-size: 0.9rem; min-width: 110px; justify-content: center;
+        }
+        .bgm-btn.playing {
+            background: var(--sub-white); color: var(--main-blue);
+            font-weight: bold; box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        .vol-dial { width: 80px; accent-color: #fff; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            h2 { font-size: 1.8rem; }
+            .field-container { transform: scale(0.9); }
+            .player-pin { width: 45px; }
+            .player-img { width: 40px; height: 40px; }
+            .side-nav { left: 10px; }
+            .bgm-player { padding: 10px; right: 10px; bottom: 10px; }
+            .bgm-btn { min-width: 90px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="site-background"></div>
+    <div class="university-logo"></div>
+
+    <nav class="side-nav">
+        <div class="nav-bar active" onclick="scrollToSection(0)"></div>
+        <div class="nav-bar" onclick="scrollToSection(1)"></div>
+        <div class="nav-bar" onclick="scrollToSection(2)"></div>
+    </nav>
+
+    <section id="section1">
+        <h2>CLUB MANAGER</h2>
+        <div class="profile-card" onclick="openModal('manager')">
+            <img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/JI1.png" alt="안지수">
+        </div>
+        <p style="margin-top: 15px; font-size: 1.2rem; font-weight: bold; letter-spacing: 2px;">안지수 (3학년)</p>
+    </section>
+
+    <section id="section2">
+        <h2>TEAM ROSTER</h2>
+        <div class="field-container">
+            <div class="player-pin pos-p" onclick="openModal('강석기')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z5.png"></div>
+                <div class="player-name">강석기(P)</div>
+            </div>
+            <div class="player-pin pos-c" onclick="openModal('권태산')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z10.png"></div>
+                <div class="player-name">권태산(C)</div>
+            </div>
+            <div class="player-pin pos-1b" onclick="openModal('신재희')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z8.png"></div>
+                <div class="player-name">신재희(1B)</div>
+            </div>
+            <div class="player-pin pos-2b" onclick="openModal('정진형')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z9.png"></div>
+                <div class="player-name">정진형(2B)</div>
+            </div>
+            <div class="player-pin pos-3b" onclick="openModal('한시우')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z7.png"></div>
+                <div class="player-name">한시우(3B)</div>
+            </div>
+            <div class="player-pin pos-ss" onclick="openModal('최기성')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z2.png"></div>
+                <div class="player-name">최기성(SS)</div>
+            </div>
+            <div class="player-pin pos-lf" onclick="openModal('김민주')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z4.png"></div>
+                <div class="player-name">김민준(LF)</div>
+            </div>
+            <div class="player-pin pos-cf" onclick="openModal('박건우')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z1.png"></div>
+                <div class="player-name">박건우(CF)</div>
+            </div>
+            <div class="player-pin pos-rf" onclick="openModal('임도현')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z3.png"></div>
+                <div class="player-name">임도현(RF)</div>
+            </div>
+            <div class="player-pin pos-coach" onclick="openModal('이성식')">
+                <div class="player-img"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z6.png"></div>
+                <div class="player-name">이성식(감독)</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section3">
+        <h2>GALLERY</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item" onclick="expandImage(this)"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z11.png"></div>
+            <div class="gallery-item" onclick="expandImage(this)"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z12.png"></div>
+            <div class="gallery-item" onclick="expandImage(this)"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z13.png"></div>
+            <div class="gallery-item" onclick="expandImage(this)"><img src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z14.png"></div>
+        </div>
+    </section>
+
+    <div id="infoModal" class="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <img id="modalCharImg" src="" alt="캐릭터" class="modal-char-img" style="display:none;">
+            <h3 id="modalName" style="font-size: 1.8rem; margin-bottom: 20px;">이름</h3>
+            <p id="modalDesc" style="line-height: 1.8; white-space: pre-wrap; text-align: left; padding: 0 10px;"></p>
+            <button onclick="closeModal()" style="margin-top: 30px; padding: 10px 30px; cursor: pointer; background: var(--main-blue); color: #fff; border: none; font-weight: bold; border-radius: 5px;">닫기</button>
+        </div>
+    </div>
+
+    <div class="bgm-player">
+        <audio id="bgm" loop src="https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/BGM.mp3"></audio>
+        <button id="bgmBtn" class="bgm-btn" onclick="toggleBgm()">
+            <span id="bgmIcon">🔇</span> <span id="bgmText">BGM OFF</span>
+        </button>
+        <input type="range" class="vol-dial" min="0" max="1" step="0.1" value="0.5" oninput="setVolume(this.value)">
+    </div>
+
+    <script>
+        // BGM 총 음량 상한선을 20%(0.2)로 고정
+        const MAX_TOTAL_VOL = 0.2; 
+        const audio = document.getElementById('bgm');
+        
+        // 초기 음량 설정: 총 음량(20%)의 50%인 0.1(10%)로 시작
+        audio.volume = MAX_TOTAL_VOL * 0.5;
+
+        const sections = document.querySelectorAll('section');
+        const navBars = document.querySelectorAll('.nav-bar');
+
+        window.addEventListener('scroll', () => {
+            let current = 0;
+            sections.forEach((section, index) => {
+                if (pageYOffset >= section.offsetTop - 300) {
+                    current = index;
+                }
+            });
+            navBars.forEach((bar, index) => {
+                bar.classList.toggle('active', index === current);
+            });
+        });
+
+        function scrollToSection(index) {
+            sections[index].scrollIntoView({ behavior: 'smooth' });
+        }
+
+        const characterData = {
+            'manager': {
+                img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/JI1.png',
+                name: '안지수 (Manager)',
+                desc: '생년월일: 2005년 8월 19일\n소속: 이주대학교 야구부 매니저 (3학년)\n\n[수행 업무]\n- 선수단 훈련 및 경기 데이터 정밀 분석\n- 학년별 훈련 스케줄 조정 및 관리\n- 선수단 멘탈 케어 및 부상 방지 모니터링\n- 경기 기록지 작성 및 전술 분석 보조'
+            },
+            '강석기': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z5.png', name: '강석기 (투수)', desc: '3학년. 에이스.\n묵직한 직구와 예리한 스위퍼가 주무기인 우완 정통파 투수.' },
+            '권태산': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z10.png', name: '권태산 (포수)', desc: '4학년. 야구부 주장.\n노련한 투수 리드와 도루 저지 능력을 겸비한 수비형 포수.' },
+            '신재희': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z8.png', name: '신재희 (1루수)', desc: '4학년. 우타 거포.\n팀 내 최고의 장타력과 득점 능력을 보유한 1루수.' },
+            '정진형': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z9.png', name: '정진형 (2루수)', desc: '2학년. 전략가.\n넓은 수비 범위와 기습 번트 등 작전 수행 능력이 탁월.' },
+            '한시우': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z7.png', name: '한시우 (3루수)', desc: '2학년. 핫코너의 수호자.\n강력한 어깨를 통한 송구 능력, 득점권에 강한 강심장.' },
+            '최기성': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z2.png', name: '최기성 (유격수)', desc: '3학년. 수비의 핵심.\n화려한 풋워크와 높은 수비력을 가진 주전 유격수.' },
+            '김민주': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z4.png', name: '김민준 (좌익수)', desc: '1학년. 출루 머신.\n빠른 발을 이용한 주루 플레이와 끈질긴 컨택 능력.' },
+            '박건우': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z1.png', name: '박건우 (중견수)', desc: '4학년. 외야의 사령탑.\n안정적인 타구 판단 능력과 뛰어난 득점 생산 능력 겸비.' },
+            '임도현': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z3.png', name: '임도현 (우익수)', desc: '1학년. 차세대 유망주.\n강한 어깨를 통한 송구력, 차세대 거포로 주목받는 유망주.' },
+            '이성식': { img: 'https://raw.githubusercontent.com/HMJ38/BS/refs/heads/main/Z6.png', name: '이성식 (감독)', desc: '전술의 대가.\n선수들의 잠재력을 끌어올리는 신뢰의 야구 지향.' }
+        };
+
+        function openModal(id) {
+            const data = characterData[id];
+            if(data) {
+                const modalImg = document.getElementById('modalCharImg');
+                modalImg.src = data.img;
+                modalImg.style.display = 'block';
+                modalImg.style.margin = '0 auto 20px auto';
+
+                document.getElementById('modalName').innerText = data.name;
+                document.getElementById('modalDesc').innerText = data.desc;
+                document.getElementById('infoModal').style.display = 'flex';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('infoModal').style.display = 'none';
+            document.getElementById('modalCharImg').style.display = 'none';
+        }
+
+        function expandImage(el) {
+            const imgSrc = el.querySelector('img').src;
+            const modalImg = document.getElementById('modalCharImg');
+            modalImg.src = imgSrc;
+            modalImg.style.display = 'block';
+            modalImg.style.margin = '0 auto 20px auto';
+            
+            document.getElementById('modalName').innerText = "PHOTO PREVIEW";
+            document.getElementById('modalDesc').innerText = ""; 
+            document.getElementById('infoModal').style.display = 'flex';
+        }
+
+        const bgmBtn = document.getElementById('bgmBtn');
+        const bgmIcon = document.getElementById('bgmIcon');
+        const bgmText = document.getElementById('bgmText');
+
+        function toggleBgm() {
+            if (audio.paused) {
+                audio.play().then(() => {
+                    bgmBtn.classList.add('playing');
+                    bgmIcon.innerText = '🎵';
+                    bgmText.innerText = 'BGM ON';
+                }).catch(e => {
+                    alert("음악을 재생하려면 화면의 아무 곳이나 한 번 클릭해 주세요!");
+                });
+            } else {
+                audio.pause();
+                bgmBtn.classList.remove('playing');
+                bgmIcon.innerText = '🔇';
+                bgmText.innerText = 'BGM OFF';
+            }
+        }
+
+        function setVolume(val) {
+            // 다이얼 값(val: 0~1)을 총 음량 상한선(0.2)에 곱하여 조절
+            audio.volume = val * MAX_TOTAL_VOL; 
+            if (val == 0) bgmIcon.innerText = '🔇';
+            else if (!audio.paused) bgmIcon.innerText = '🎵';
+        }
+    </script>
+</body>
+</html>
